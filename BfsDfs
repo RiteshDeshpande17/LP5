@@ -1,0 +1,134 @@
+#include <iostream>   // For standard input/output
+#include <vector>     // For dynamic arrays
+#include <queue>      // For BFS (Breadth-First Search)
+#include <stack>      // For DFS (Depth-First Search)
+#include <omp.h>      // For OpenMP parallel programming
+
+using namespace std;
+
+// Graph class representing an undirected graph using adjacency list
+class Graph {
+private:
+    int numVertices;                     // Number of vertices in the graph
+    vector<vector<int>> adj;            // Adjacency list
+
+public:
+    // Constructor to initialize the graph with given vertices
+    Graph(int vertices) : numVertices(vertices), adj(vertices) {}
+
+    // Adds an undirected edge between src and dest
+    void addEdge(int src, int dest) {
+        adj[src].push_back(dest);       // Add edge from src to dest
+        adj[dest].push_back(src);       // Add edge from dest to src
+    }
+
+    // Displays the adjacency list of the graph
+    void viewGraph() {
+        cout << "Graph:\n";
+        for (int i = 0; i < numVertices; i++) {
+            cout << "Vertex " << i << " -> ";
+            for (int neighbor : adj[i]) {
+                cout << neighbor << " ";
+            }
+            cout << endl;
+        }
+    }
+
+    // Breadth-First Search (BFS) traversal from a starting vertex
+    void bfs(int startVertex) {
+        vector<bool> visited(numVertices, false); // Tracks visited nodes
+        queue<int> q;                             // Queue for BFS traversal
+
+        visited[startVertex] = true;              // Mark starting vertex as visited
+        q.push(startVertex);                      // Enqueue the starting vertex
+
+        cout << "Breadth First Search (BFS): ";
+
+        // Loop until queue is empty
+        while (!q.empty()) {
+            int currentVertex = q.front();        // Get front of queue
+            q.pop();                              // Remove it from queue
+            cout << currentVertex << " ";         // Print the visited vertex
+
+            // Traverse all adjacent vertices of the current vertex
+            // ⚠ This section is parallelized but NOT thread-safe
+            #pragma omp parallel for
+            for (int i = 0; i < adj[currentVertex].size(); i++) {
+                int neighbor = adj[currentVertex][i];
+                if (!visited[neighbor]) {
+                    visited[neighbor] = true;
+                    q.push(neighbor); // Queue is shared and not thread-safe
+                }
+            }
+        }
+
+        cout << endl;
+    }
+
+    // Depth-First Search (DFS) traversal from a starting vertex
+    void dfs(int startVertex) {
+        vector<bool> visited(numVertices, false); // Tracks visited nodes
+        stack<int> s;                             // Stack for DFS traversal
+
+        visited[startVertex] = true;              // Mark starting vertex as visited
+        s.push(startVertex);                      // Push the starting vertex
+
+        cout << "Depth First Search (DFS): ";
+
+        // Loop until stack is empty
+        while (!s.empty()) {
+            int currentVertex = s.top();          // Get the top element
+            s.pop();                              // Remove it from the stack
+            cout << currentVertex << " ";         // Print the visited vertex
+
+            // Traverse all adjacent vertices of the current vertex
+            // ⚠ This section is parallelized but NOT thread-safe
+            #pragma omp parallel for
+            for (int i = 0; i < adj[currentVertex].size(); i++) {
+                int neighbor = adj[currentVertex][i];
+                if (!visited[neighbor]) {
+                    visited[neighbor] = true;
+                    s.push(neighbor); // ⚠ Stack is shared and not thread-safe
+                }
+            }
+        }
+
+        cout << endl;
+    }
+};
+
+// Main function to test the Graph class
+int main() {
+    int numVertices;
+    cout <<"\n Ritesh Deshpande B div Roll No.  41209\n";
+    cout << "Enter the number of vertices in the graph: ";
+    cin >> numVertices;
+
+    // Create a graph with the specified number of vertices
+    Graph graph(numVertices);
+
+    int numEdges;
+    cout << "Enter the number of edges in the graph: ";
+    cin >> numEdges;
+
+    // Input all the edges
+    cout << "Enter the edges (source destination):\n";
+    for (int i = 0; i < numEdges; i++) {
+        int src, dest;
+        cin >> src >> dest;
+        graph.addEdge(src, dest); // Add each edge to the graph
+    }
+
+    // Display the graph
+    graph.viewGraph();
+
+    int startVertex;
+    cout << "Enter the starting vertex for BFS and DFS: ";
+    cin >> startVertex;
+
+    // Perform BFS and DFS starting from the given vertex
+    graph.bfs(startVertex);
+    graph.dfs(startVertex);
+
+    return 0;
+}
